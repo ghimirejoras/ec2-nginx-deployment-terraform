@@ -1,13 +1,28 @@
 # variables.tf 
 
-variable "ami_id" {}
-variable "instance_type" {}
-variable "vpc_cidr_block" {}
-variable "subnet_cidr_block" {}
-variable "availability_zone" {}
-variable "key_name" {}
-variable "ebs_volume_size" {}
+variable "ami_id" {
+  default = "ami-084568db4383264d"
+}
+variable "instance_type" {
+  default = "t2.micro"
+}
+variable "vpc_cidr_block" {
+  default = "10.0.0.0/16"
+}
+variable "subnet_cidr_block" {
+  default = "10.0.1.0/24"
+}
+variable "availability_zone" {
+  default = "us-east-1a"
+}
+variable "key_name" {
+  default = "terraform-key-v2"
+}
+variable "ebs_volume_size" {
+  default = 10
+}
 variable "ebs_volume_type" {
+  default   = "gp3"
   sensitive = true
 }
 variable "public_key_path" {
@@ -29,4 +44,33 @@ variable "ingress_rules" {
     protocol    = string
     cidr_blocks = list(string)
   }))
+
+  default = [
+    {
+      from_port   = 22
+      to_port     = 22
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+    },
+
+    {
+      from_port   = 80
+      to_port     = 80
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+    },
+
+    {
+      from_port   = 443
+      to_port     = 443
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+    },
+    {
+      from_port   = -1
+      to_port     = -1
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+  ]
 }
