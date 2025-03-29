@@ -20,6 +20,10 @@ jobs:
                 with:
                     terraform_version: 1.11.3
 
+            -   name: Debug
+                run: ls -R
+                working-directory: ./terraform
+
             -   name: Terraform Init
                 run: terraform init
                 working-directory: ./terraform
