@@ -39,7 +39,7 @@ resource "aws_instance" "nginx_instance" {
 
   provisioner "file" {
     source      = var.filelocation_prtkey
-    destination = "/tmp/id_ed25519"
+    destination = var.destination
 
 
     connection {

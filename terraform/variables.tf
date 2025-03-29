@@ -15,6 +15,11 @@ variable "public_key_path" {
 }
 variable "filelocation_prtkey" {}
 
+variable "destination" {
+  sensitive = true
+
+}
+
 
 
 variable "ingress_rules" {
