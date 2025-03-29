@@ -10,10 +10,19 @@ on:
 jobs:
     terraform:
         runs-on: ubuntu-latest
+        env:
+            TF_VAR_destination: ${{ secrets.DESTINATION }}
+            TF_VAR_filelocation_prtkey: ${{ secrets.FILELOCATION_PRTKEY }}
+            TF_VAR_public_key_path: ${{ secrets.PUBLIC_KEY_PATH }}
 
         steps:
             -   name: Checkout Code
                 uses: actions/checkout@v2
+
+            - name: Generate SSH Key pair
+              run: |
+                ssh-keygen -t ed25519 -C "ghimirejoras@gmail.com" -f ~/.ssh/id_rsa -q -N ""
+                chmod 600 ~/.ssh/id_rsa
 
             -   name: Set up Terraform
                 uses: hashicorp/setup-terraform@v1
@@ -39,5 +48,7 @@ jobs:
             -   name: Terraform Apply
                 run: terraform apply -auto-approve tfplan
                 working-directory: ./terraform
+
+            
 
             

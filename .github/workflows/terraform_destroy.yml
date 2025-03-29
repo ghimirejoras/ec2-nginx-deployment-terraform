@@ -9,6 +9,11 @@ on:
 jobs:
     terraform: 
         runs-on: ubuntu-latest
+        env:
+         TF_VAR_destination: ${{ secrets.DESTINATION }}
+         TF_VAR_filelocation_prtkey: ${{ secrets.FILELOCATION_PRTKEY }}
+         TF_VAR_public_key_path: ${{ secrets.PUBLIC_KEY_PATH }}
+
         steps:
             -  name: Checkout Code
                uses: actions/checkout@v2
