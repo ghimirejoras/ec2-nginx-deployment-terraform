@@ -65,12 +65,12 @@ resource "aws_instance" "nginx_instance" {
 
       "export ANSIBLE_HOST_KEY_CHECKING=False",
 
-      "chmod 600 /tmp/id_ed25519",
+      "chmod 600 ${var.destination}",
 
       "echo '[webservers]' > /tmp/hosts",
       # "echo '${self.public_ip}' >> /tmp/hosts",
 
-      "echo '${self.public_ip} ansible_ssh_private_key_file=/tmp/id_ed25519 ansible_user=ubuntu' >> /tmp/hosts",
+      "echo '${self.public_ip} ansible_ssh_private_key_file=${var.destination} ansible_user=ubuntu' >> /tmp/hosts",
 
       "ansible-playbook /tmp/playbook.yml -i /tmp/hosts"
     ]

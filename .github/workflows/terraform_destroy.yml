@@ -1,0 +1,30 @@
+# .github/workflows/terraform_destroy.yml 
+
+
+name: Terraform Destroy GitHub Actions AWS
+
+on:
+    workflow_dispatch:
+    
+jobs:
+    terraform: 
+        runs-on: ubuntu-latest
+        steps:
+            -  name: Checkout Code
+               uses: actions/checkout@v2
+
+            -  name: Set up Terraform
+               uses: hashicorp/setup-terraform@v1
+               with:
+                    terraform_version: 1.11.3
+
+            -  name: Terraform Init
+               run: terraform init
+
+            -  name: Terraform Destroy
+               run: terraform destroy -auto-approve
+
+            -  name: Clean up Terraform Files
+               run: |
+                 terraform state rm $( terraform state list)
+
