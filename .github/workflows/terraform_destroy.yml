@@ -18,16 +18,16 @@ jobs:
                with:
                     terraform_version: 1.11.3
 
-            -  name: Change directory terraform
-               run: cd terraform
-
             -  name: Terraform Init
                run: terraform init
+               working-directory: ./terraform
 
             -  name: Terraform Destroy
                run: terraform destroy -auto-approve
+               working-directory: ./terraform
 
             -  name: Clean up Terraform Files
                run: |
                  terraform state rm $( terraform state list)
+               working-directory: ./terraform
 
