@@ -10,6 +10,7 @@ on:
 jobs:
     terraform:
         runs-on: ubuntu-latest
+
         steps:
             -   name: Checkout Code
                 uses: actions/checkout@v2
@@ -18,14 +19,20 @@ jobs:
                 uses: hashicorp/setup-terraform@v1
                 with:
                     terraform_version: 1.11.3
+            
+            -   name: Change directory terraform 
+                run: cd terraform
 
             -   name: Terraform Init
                 run: terraform init
+            
+            -   name: Terraform Validate
+                run: terraform validate
 
             -   name: Terraform Plan
-                run: terraform plan
+                run: terraform plan -out=tfplan
 
             -   name: Terraform Apply
-                run: terraform apply -auto-approve
+                run: terraform apply -auto-approve tfplan
 
             
