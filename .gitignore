@@ -1,0 +1,40 @@
+# Terraform state files
+*.tfstate
+*.tfstate.*
+.terraform/
+terraform.tfvars
+*.tfvars
+
+# Crash log files
+crash.log
+
+# .terraform directories
+.terraform/
+
+# override files (for example, user-specific overrides)
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Local execution files
+*.tfplan
+*.tfplan.*
+
+# Sensitive data files
+*.pem
+*.key
+id_rsa
+id_rsa.pub
+
+# IDE files
+.vscode/
+.idea/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Ansible files (if you have them in your repo)
+ansible/hosts
+ansible/.ansible.cfg
