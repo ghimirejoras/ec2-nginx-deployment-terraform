@@ -1,5 +1,17 @@
 # variables.tf 
 
+variable "aws_region" {
+  default   = "us-east-1"
+  sensitive = true
+}
+
+variable "aws_access_key_id" {
+  sensitive = true
+}
+
+variable "aws_secret_access_key" {
+  sensitive = true
+}
 variable "ami_id" {
   default = "ami-084568db4383264d"
 }

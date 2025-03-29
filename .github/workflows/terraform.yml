@@ -11,9 +11,12 @@ jobs:
     terraform:
         runs-on: ubuntu-latest
         env:
+
             TF_VAR_destination: ${{ secrets.DESTINATION }}
             TF_VAR_filelocation_prtkey: ${{ secrets.FILELOCATION_PRTKEY }}
             TF_VAR_public_key_path: ${{ secrets.PUBLIC_KEY_PATH }}
+            TF_VAR_aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+            TF_VAR_aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
         steps:
             -   name: Checkout Code
