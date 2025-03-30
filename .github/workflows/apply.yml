@@ -1,7 +1,7 @@
 # .github/workflows/terraform.yml
 ---
 
-name: Terraform GitHub Actions Apply
+name: apply
 
 on:
     push:
