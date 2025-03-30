@@ -1,9 +1,10 @@
 # variables.tf 
-/*
+
 variable "aws_region" {
   default   = "us-east-1"
   sensitive = true
 }
+/*
 
 variable "aws_access_key_id" {
   sensitive = true
