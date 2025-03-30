@@ -1,7 +1,7 @@
 # .github/workflows/terraform_destroy.yml 
 
 
-name: Terraform Destroy GitHub Actions AWS
+name: Destroy
 
 on:
    workflow_dispatch:
