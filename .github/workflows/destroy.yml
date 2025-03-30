@@ -4,7 +4,7 @@
 name: Terraform Destroy GitHub Actions AWS
 
 on:
-    workflow_dispatch:
+   workflow_dispatch:
     
 jobs:
     terraform: 
