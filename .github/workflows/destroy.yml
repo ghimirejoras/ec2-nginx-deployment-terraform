@@ -1,7 +1,7 @@
 # .github/workflows/terraform_destroy.yml
 ---
 
-   
+
 name: Destroy
 
 on:
@@ -41,4 +41,4 @@ jobs:
           rm -rf .terraform* terraform.tfstate*
         working-directory: ./terraform
 
-        ###
+        
