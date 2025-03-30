@@ -84,8 +84,8 @@ variable "ingress_rules" {
       cidr_blocks = ["0.0.0.0/0"]
     },
     {
-      from_port   = -1
-      to_port     = -1
+      from_port   = "-1"
+      to_port     = "-1"
       protocol    = "tcp"
       cidr_blocks = ["0.0.0.0/0"]
     }
