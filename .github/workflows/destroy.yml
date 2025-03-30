@@ -37,7 +37,6 @@ jobs:
 
       - name: Clean up Terraform Files
         run: |
-          terraform state rm $( terraform state list)
           rm -rf .terraform* terraform.tfstate*
         working-directory: ./terraform
 
