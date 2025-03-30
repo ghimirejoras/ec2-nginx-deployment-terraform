@@ -18,7 +18,7 @@ variable "aws_secret_access_key" {
 
 
 variable "ami_id" {
-  default = "ami-084568db4383264d4"
+  default = "ami-0f9de6e2d2f067fca"
 }
 variable "instance_type" {
   default = "t2.micro"
