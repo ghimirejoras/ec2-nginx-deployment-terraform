@@ -4,7 +4,7 @@
 resource "aws_instance" "nginx_instance" {
   ami                         = var.ami_id
   instance_type               = var.instance_type
-  key_name                    = aws_key_pair.key_pair.key_name
+  key_name                    = length(try(data.aws_key_pair.my_key.id, [])) > 0 ? data.aws_key_pair.my_key.key_name : aws_key_pair.key_pair[0].key_name
   subnet_id                   = aws_subnet.public_subnet.id
   vpc_security_group_ids      = [aws_security_group.web_sg.id]
   associate_public_ip_address = true
@@ -96,7 +96,14 @@ resource "aws_eip" "nginx_eip" {
   }
 }
 
+
+data "aws_key_pair" "my_key" {
+  key_name = var.key_name
+}
+
+
 resource "aws_key_pair" "key_pair" {
+  count      = length(try(data.aws_key_pair.my_key.id, [])) == 0 ? 1 : 0
   key_name   = var.key_name
   public_key = file(var.public_key_path)
 } 
