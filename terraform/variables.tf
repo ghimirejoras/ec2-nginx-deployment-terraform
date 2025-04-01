@@ -1,14 +1,6 @@
 # variables.tf 
 
-<<<<<<< Updated upstream
-variable "ami_id" {}
-variable "instance_type" {}
-variable "vpc_cidr_block" {}
-variable "subnet_cidr_block" {}
-variable "availability_zone" {}
-variable "key_name" {}
-variable "ebs_volume_size" {}
-=======
+
 variable "user" {
   default   = "terraform-admin"
   sensitive = true
@@ -45,9 +37,7 @@ variable "subnet_cidr_block" {
 variable "availability_zone" {
   default = "us-east-1a"
 }
-variable "key_name" {
-  default = "terraform-key-v2"
-}
+variable "key_name" {}
 variable "ebs_volume_size" {
   default = 10
 }
