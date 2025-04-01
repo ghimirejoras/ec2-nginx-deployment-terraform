@@ -1,14 +1,5 @@
 # variables.tf 
 
-<<<<<<< Updated upstream
-variable "ami_id" {}
-variable "instance_type" {}
-variable "vpc_cidr_block" {}
-variable "subnet_cidr_block" {}
-variable "availability_zone" {}
-variable "key_name" {}
-variable "ebs_volume_size" {}
-=======
 variable "user" {
   default   = "terraform-admin"
   sensitive = true
@@ -51,7 +42,7 @@ variable "key_name" {
 variable "ebs_volume_size" {
   default = 10
 }
->>>>>>> Stashed changes
+
 variable "ebs_volume_type" {
   sensitive = true
 }
