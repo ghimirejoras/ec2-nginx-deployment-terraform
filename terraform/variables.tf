@@ -41,7 +41,7 @@ variable "key_name" {}
 variable "ebs_volume_size" {
   default = 10
 }
->>>>>>> Stashed changes
+
 variable "ebs_volume_type" {
   sensitive = true
 }

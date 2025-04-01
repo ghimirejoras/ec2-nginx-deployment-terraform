@@ -38,3 +38,10 @@ Thumbs.db
 # Ansible files (if you have them in your repo)
 ansible/hosts
 ansible/.ansible.cfg
+
+
+
+*tfplan
+.*tfplan
+.tfplan
+.vscode

@@ -1,0 +1,59 @@
+# .github/workflows/terraform.yml
+---
+
+name: apply
+
+on:
+    push:
+        branches: 
+            - dev
+
+jobs:
+    terraform:
+        runs-on: ubuntu-latest
+        environment: dev
+        env:
+            TF_VAR_destination: ${{ secrets.DESTINATION }}
+            TF_VAR_filelocation_prtkey: ${{ secrets.FILELOCATION_PRTKEY }}
+            TF_VAR_public_key_path: ${{ secrets.PUBLIC_KEY_PATH }}
+            AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+            AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            AWS_REGION: ${{ secrets.AWS_REGION }}
+
+        steps:
+            -   name: Checkout Code
+                uses: actions/checkout@v2
+
+            -   name: Generate SSH Key pair
+                run: |
+                    ssh-keygen -t ed25519 -C "ghimirejoras@gmail.com" -f ~/.ssh/id_rsa -q -N ""
+                    chmod 600 ~/.ssh/id_rsa
+
+            -   name: Set up Terraform
+                uses: hashicorp/setup-terraform@v1
+                with:
+                    terraform_version: 1.10.5
+
+            -   name: Debug
+                run: ls -R
+                working-directory: ./terraform
+
+            -   name: Terraform Init
+                run: terraform init
+                working-directory: ./terraform
+            
+            -   name: Terraform Validate
+                run: terraform validate
+                working-directory: ./terraform
+
+            -   name: Terraform Plan
+                run: terraform plan -out=tfplan
+                working-directory: ./terraform
+
+            -   name: Terraform Apply
+                run: terraform apply -auto-approve tfplan
+                working-directory: ./terraform
+
+            
+
+            ####run####
