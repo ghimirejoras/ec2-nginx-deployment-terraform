@@ -2,7 +2,7 @@
 
 
 data "aws_key_pair" "old_key_pair" {
-  key_name = var.key_name
+  key_name = lookup({key_name = var.key_name}, var.key_name, null)
 }
 
 

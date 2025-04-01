@@ -41,4 +41,7 @@ ansible/.ansible.cfg
 
 
 
+*tfplan
+.*tfplan
+.tfplan
 .vscode

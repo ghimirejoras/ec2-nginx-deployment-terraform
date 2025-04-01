@@ -33,7 +33,6 @@ variable "availability_zone" {
   default = "us-east-1a"
 }
 variable "key_name" {
-  default = "terraform-key-v2"
 }
 variable "ebs_volume_size" {
   default = 10
