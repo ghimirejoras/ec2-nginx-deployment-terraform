@@ -1,8 +1,18 @@
 # variables.tf 
 
+/*
+variable "bucket" {}
+variable "key" {}
+variable "region" {}
+variable "encrypt" {}
+*/
+
+
 variable "aws_region" {
   sensitive = true
 }
+
+
 /*
 
 variable "aws_access_key_id" {
