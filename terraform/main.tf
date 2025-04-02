@@ -2,7 +2,7 @@
 
 
 data "aws_key_pair" "old_key_pair" {
-  key_name = lookup({key_name = var.key_name}, var.key_name, null)
+  key_name = lookup({ key_name = var.key_name }, var.key_name, null)
 }
 
 
@@ -11,7 +11,7 @@ resource "aws_key_pair" "new_key_pair" {
   count      = try(data.aws_key_pair.old_key_pair.key_name, null) != null ? 0 : 1
   key_name   = var.key_name
   public_key = file(var.public_key_path)
-} 
+}
 
 resource "aws_instance" "nginx_instance" {
   ami                         = var.ami_id
