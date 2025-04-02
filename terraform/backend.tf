@@ -10,7 +10,7 @@ required_providers {
 
 backend "s3"
     bucket = "var.bucketname"
-    key = terraform.tfstate 
+    key = ec2-nginx-tf-aws/terraform.tfstate 
     region = var.region
     encrypt = true 
 }
