@@ -23,7 +23,35 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v2
 
-      - name: Generate tfvars dynamic
+      - name: Generate tfvars dynamic 
+        env:
+          ALL_INGRESS_RULES: |
+            [
+              {
+                "from_port": "${{ secrets.INGRESS_FROM_PORT_1 }}",
+                "to_port": "${{ secrets.INGRESS_TO_PORT_1 }}",
+                "protocol": "${{ secrets.INGRESS_PROTOCOL_1 }}",
+                "cidr_blocks": "${{ secrets.INGRESS_CIDR_BLOCK_1 }}"
+              },
+              {
+                "from_port": "${{ secrets.INGRESS_FROM_PORT_2 }}",
+                "to_port": "${{ secrets.INGRESS_TO_PORT_2 }}",
+                "protocol": "${{ secrets.INGRESS_PROTOCOL_2 }}",
+                "cidr_blocks": "${{ secrets.INGRESS_CIDR_BLOCK_2 }}"
+              },
+              {
+                "from_port": "${{ secrets.INGRESS_FROM_PORT_3 }}",
+                "to_port": "${{ secrets.INGRESS_TO_PORT_3 }}",
+                "protocol": "${{ secrets.INGRESS_PROTOCOL_3 }}",
+                "cidr_blocks": "${{ secrets.INGRESS_CIDR_BLOCK_3 }}"
+              },
+              {
+                "from_port": "${{ secrets.INGRESS_FROM_PORT_4 }}",
+                "to_port": "${{ secrets.INGRESS_TO_PORT_4 }}",
+                "protocol": "${{ secrets.INGRESS_PROTOCOL_4 }}",
+                "cidr_blocks": "${{ secrets.INGRESS_CIDR_BLOCK_4 }}"
+              }
+            ]
         run: |  
           echo "bucketname = \"${{ secrets.BUCKETNAME }}\"" >> terraform.tfvars
           echo "ami_id = \"${{ secrets.AMI_ID }}\"" >> terraform.tfvars
@@ -38,20 +66,22 @@ jobs:
           echo "ebs_volume_size = \"${{ secrets.EBS_VOLUME_SIZE }}\"" >> terraform.tfvars
           echo "ebs_volume_type = \"${{ secrets.EBS_VOLUME_TYPE }}\"" >> terraform.tfvars
             
-          echo "ingress_rules = [" >> terraform.tfvars
-          for i in 1 2 3 4; do
-            # Explicitly access the secrets for each ingress rule
-            from_port=${{ secrets["INGRESS_FROM_PORT_${i}"] }}
-            to_port=${{ secrets["TO_PORT_${i}"] }}
-            protocol=${{ secrets["INGRESS_PROTOCOL_${i}"] }}
-            cidr_block=${{ secrets["INGRESS_CIDR_BLOCK_${i}"] }}
-                
-            if [ "$i" -gt 1 ]; then
-                echo "," >> terraform.tfvars  # Add a comma before subsequent rules
+          echo "ingress_rules = [" > terraform.tfvars
+          echo "$ALL_INGRESS_RULES" | jq -c '.[]' | while read rule; do
+            # Extract values from JSON
+            from_port=$(echo $rule | jq -r '.from_port')
+            to_port=$(echo $rule | jq -r '.to_port')
+            protocol=$(echo $rule | jq -r '.protocol')
+            cidr_blocks=$(echo $rule | jq -r '.cidr_blocks')
+      
+            # Skip empty rules
+            if [[ -n "$from_port" && "$from_port" != "null" ]]; then
+              echo "  { from_port = $from_port, to_port = $to_port, protocol = \"$protocol\", cidr_blocks = [\"$cidr_blocks\"] }," >> terraform.tfvars
             fi
-              
-            echo "  { from_port = $from_port, to_port = $to_port, protocol = \"$protocol\", cidr_blocks = [\"$cidr_block\"] }" >> terraform.tfvars
           done
+      
+          # Remove last comma and close array
+          sed -i '$ s/,$//' terraform.tfvars
           echo "]" >> terraform.tfvars
         working-directory: ./terraform
 
