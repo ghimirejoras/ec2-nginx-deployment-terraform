@@ -26,7 +26,7 @@ jobs:
 
             -   name: Generate SSH Key pair
                 run: |
-                    ssh-keygen -t ed25519 -C "ghimirejoras@gmail.com" -f ~/.ssh/id_rsa -q -N ""
+                    ssh-keygen -t ed25519 -C "hagulumba@gmail.com" -f ~/.ssh/id_rsa -q -N ""
                     chmod 600 ~/.ssh/id_rsa
 
             -   name: Set up Terraform
@@ -53,7 +53,8 @@ jobs:
             -   name: Terraform Apply
                 run: terraform apply -auto-approve tfplan
                 working-directory: ./terraform
-
+            
+            
             
 
             ####run####
