@@ -13,24 +13,66 @@ jobs:
         runs-on: ubuntu-latest
         environment: dev
         env:
-            TF_VAR_destination: ${{ secrets.DESTINATION }}
-            TF_VAR_filelocation_prtkey: ${{ secrets.FILELOCATION_PRTKEY }}
-            TF_VAR_public_key_path: ${{ secrets.PUBLIC_KEY_PATH }}
+
             AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
             AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
             AWS_REGION: ${{ secrets.AWS_REGION }}
 
+
         steps:
             -   name: Checkout Code
-                uses: actions/checkout@v2
+                uses: actions/checkout@v4
 
             -   name: Generate SSH Key pair
                 run: |
                     ssh-keygen -t ed25519 -C "hagulumba@gmail.com" -f ~/.ssh/id_rsa -q -N ""
                     chmod 600 ~/.ssh/id_rsa
 
+            -   name: Generate tfvars dynamic
+                run: |
+                    
+                    echo "bucketname = \"${{ secrets.BUCKETNAME }}\"" >> terraform.tfvars
+                    echo "ami_id = \"${{ secrets.AMI_ID }}\"" >> terraform.tfvars
+                    echo "instance_type = \"${{ secrets.INSTANCE_TYPE }}\"" >> terraform.tfvars
+                    echo "key_name = \"${{ secrets.KEY_NAME }}\"" >> terraform.tfvars
+                    echo "public_key_path = \"${{ secrets.PUBLIC_KEY_PATH }}\"" >> terraform.tfvars
+                    echo "filelocation_prtkey = \"${{ secrets.FILELOCATION_PRTKEY }}\"" >> terraform.tfvars
+                    echo "vpc_cidr_block = \"${{ secrets.VPC_CIDR_BLOCK }}\"" >> terraform.tfvars
+                    echo "subnet_cidr_block = \"${{ secrets.SUBNET_CIDR_BLOCK }}\"" >> terraform.tfvars
+                    echo "availability_zone = \"${{ secrets.AVAILABILITY_ZONE }}\"" >> terraform.tfvars
+                    echo "destination = \"${{ secrets.DESTINATION }}\"" >> terraform.tfvars
+                    echo "ebs_volume_size = \"${{ secrets.EBS_VOLUME_SIZE }}\"" >> terraform.tfvars
+                    echo "ebs_volume_type = \"${{ secrets.EBS_VOLUME_TYPE }}\"" >> terraform.tfvars
+                    
+                    echo "ingress_rules = [" >> terraform.tfvars
+                    for i in 1 2 3 4; do
+                        # Explicitly access the secrets for each ingress rule
+                        from_port=${{ secrets["INGRESS_FROM_PORT_${i}"] }}
+                        to_port=${{ secrets["TO_PORT_${i}"] }}
+                        protocol=${{ secrets["INGRESS_PROTOCOL_${i}"] }}
+                        cidr_block=${{ secrets["INGRESS_CIDR_BLOCK_${i}"] }}
+                        
+                        if [ "$i" -gt 1 ]; then
+                            echo "," >> terraform.tfvars  # Add a comma before subsequent rules
+                        fi
+                        
+                        echo "  { from_port = $from_port, to_port = $to_port, protocol = \"$protocol\", cidr_blocks = [\"$cidr_block\"] }" >> terraform.tfvars
+                    done
+                    echo "]" >> terraform.tfvars
+                working-directory: ./terraform
+
+
+            -   name: Generate backend-config.tfvars dynamically
+                run: |
+                    echo "bucket = \"${{ secrets.TF_BACKEND_BUCKET }}\"" > backend-config.tfvars
+                    echo "key = \"${{ secrets.TF_BACKEND_KEY }}\"" >> backend-config.tfvars
+                    echo "region = \"${{ secrets.AWS_REGION }}\"" >> backend-config.tfvars
+                    echo "use_lockfile = \"${{ secrets.TF_BACKEND_LOCK_FILE }}\"" >> backend-config.tfvars
+                    echo "encrypt = true" >> backend-config.tfvars
+                working-directory: ./terraform
+
             -   name: Set up Terraform
-                uses: hashicorp/setup-terraform@v1
+                uses: hashicorp/setup-terraform@v3
                 with:
                     terraform_version: 1.10.5
 
@@ -38,12 +80,18 @@ jobs:
                 run: ls -R
                 working-directory: ./terraform
 
-            -   name: Terraform Init
-                run: terraform init
+            -   name: Terraform Fmt
+                run: terraform fmt -check
                 working-directory: ./terraform
+
+
             
             -   name: Terraform Validate
                 run: terraform validate
+                working-directory: ./terraform
+
+            -   name: Terraform Init
+                run: terraform init -backend-config=backend-config.tfvars
                 working-directory: ./terraform
 
             -   name: Terraform Plan
@@ -57,4 +105,4 @@ jobs:
             
             
 
-            ####run####
+            
