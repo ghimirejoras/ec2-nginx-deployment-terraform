@@ -9,9 +9,9 @@ on:
 
 jobs:
   terraform:
-   runs-on: ubuntu-latest
-   environment: dev
-   env:
+    runs-on: ubuntu-latest
+    environment: dev
+    env:
       TF_VAR_destination: ${{ secrets.DESTINATION }}
       TF_VAR_filelocation_prtkey: ${{ secrets.FILELOCATION_PRTKEY }}
       TF_VAR_public_key_path: ${{ secrets.PUBLIC_KEY_PATH }}
@@ -19,99 +19,109 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_REGION: ${{ secrets.AWS_REGION }}
 
-   steps:
-      - name: Checkout Code
-        uses: actions/checkout@v2
-
-      - name: Generate tfvars dynamic 
-        env:
-          ALL_INGRESS_RULES: |
-            [
-              {
-                "from_port": "${{ secrets.INGRESS_FROM_PORT_1 }}",
-                "to_port": "${{ secrets.INGRESS_TO_PORT_1 }}",
-                "protocol": "${{ secrets.INGRESS_PROTOCOL_1 }}",
-                "cidr_blocks": "${{ secrets.INGRESS_CIDR_BLOCK_1 }}"
-              },
-              {
-                "from_port": "${{ secrets.INGRESS_FROM_PORT_2 }}",
-                "to_port": "${{ secrets.INGRESS_TO_PORT_2 }}",
-                "protocol": "${{ secrets.INGRESS_PROTOCOL_2 }}",
-                "cidr_blocks": "${{ secrets.INGRESS_CIDR_BLOCK_2 }}"
-              },
-              {
-                "from_port": "${{ secrets.INGRESS_FROM_PORT_3 }}",
-                "to_port": "${{ secrets.INGRESS_TO_PORT_3 }}",
-                "protocol": "${{ secrets.INGRESS_PROTOCOL_3 }}",
-                "cidr_blocks": "${{ secrets.INGRESS_CIDR_BLOCK_3 }}"
-              },
-              {
-                "from_port": "${{ secrets.INGRESS_FROM_PORT_4 }}",
-                "to_port": "${{ secrets.INGRESS_TO_PORT_4 }}",
-                "protocol": "${{ secrets.INGRESS_PROTOCOL_4 }}",
-                "cidr_blocks": "${{ secrets.INGRESS_CIDR_BLOCK_4 }}"
-              }
-            ]
-        run: |  
-          echo "bucketname = \"${{ secrets.BUCKETNAME }}\"" >> terraform.tfvars
-          echo "ami_id = \"${{ secrets.AMI_ID }}\"" >> terraform.tfvars
-          echo "instance_type = \"${{ secrets.INSTANCE_TYPE }}\"" >> terraform.tfvars
-          echo "key_name = \"${{ secrets.KEY_NAME }}\"" >> terraform.tfvars
-          echo "public_key_path = \"${{ secrets.PUBLIC_KEY_PATH }}\"" >> terraform.tfvars
-          echo "filelocation_prtkey = \"${{ secrets.FILELOCATION_PRTKEY }}\"" >> terraform.tfvars
-          echo "vpc_cidr_block = \"${{ secrets.VPC_CIDR_BLOCK }}\"" >> terraform.tfvars
-          echo "subnet_cidr_block = \"${{ secrets.SUBNET_CIDR_BLOCK }}\"" >> terraform.tfvars
-          echo "availability_zone = \"${{ secrets.AVAILABILITY_ZONE }}\"" >> terraform.tfvars
-          echo "destination = \"${{ secrets.DESTINATION }}\"" >> terraform.tfvars
-          echo "ebs_volume_size = \"${{ secrets.EBS_VOLUME_SIZE }}\"" >> terraform.tfvars
-          echo "ebs_volume_type = \"${{ secrets.EBS_VOLUME_TYPE }}\"" >> terraform.tfvars
-            
-          echo "ingress_rules = [" > terraform.tfvars
-          echo "$ALL_INGRESS_RULES" | jq -c '.[]' | while read rule; do
-            # Extract values from JSON
-            from_port=$(echo $rule | jq -r '.from_port')
-            to_port=$(echo $rule | jq -r '.to_port')
-            protocol=$(echo $rule | jq -r '.protocol')
-            cidr_blocks=$(echo $rule | jq -r '.cidr_blocks')
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v2
       
-            # Skip empty rules
-            if [[ -n "$from_port" && "$from_port" != "null" ]]; then
-              echo "  { from_port = $from_port, to_port = $to_port, protocol = \"$protocol\", cidr_blocks = [\"$cidr_blocks\"] }," >> terraform.tfvars
-            fi
-          done
-      
-          # Remove last comma and close array
-          sed -i '$ s/,$//' terraform.tfvars
-          echo "]" >> terraform.tfvars
-        working-directory: ./terraform
+    - name: Install jq (JSON Processor)
+      run: sudo apt-get update && sudo apt-get install -y jq
 
+    - name: Generate Terraform Variable Files
+      id: generate_vars
+      env:
+        # Simple Variables (using secrets directly)
+        BUCKETNAME: ${{ secrets.BUCKETNAME }}
+        AMI_ID: ${{ secrets.AMI_ID }}
+        INSTANCE_TYPE: ${{ secrets.INSTANCE_TYPE }}
+        KEY_NAME: ${{ secrets.KEY_NAME }} # Name of the EC2 KeyPair (might relate to SSH key above?)
+        PUBLIC_KEY_PATH: ${{ secrets.PUBLIC_KEY_PATH }} # Path to public key? (Verify usage)
+        # FILELOCATION_PRTKEY: ${{ secrets.FILELOCATION_PRTKEY }} # Path to private key? (Verify usage - HIGH SECURITY RISK if passing private keys directly)
+        VPC_CIDR_BLOCK: ${{ secrets.VPC_CIDR_BLOCK }}
+        SUBNET_CIDR_BLOCK: ${{ secrets.SUBNET_CIDR_BLOCK }}
+        AVAILABILITY_ZONE: ${{ secrets.AVAILABILITY_ZONE }}
+        DESTINATION: ${{ secrets.DESTINATION }} # Purpose unclear, ensure it's used
+        EBS_VOLUME_SIZE: ${{ secrets.EBS_VOLUME_SIZE }}
+        EBS_VOLUME_TYPE: ${{ secrets.EBS_VOLUME_TYPE }}
+        # GENERATED_PUB_KEY: ${{ env.GENERATED_PUB_KEY }} # Uncomment if capturing pub key from previous step
 
-      - name: Generate backend-config.tfvars dynamically
-        run: |
-          echo "bucket = \"${{ secrets.TF_BACKEND_BUCKET }}\"" > backend-config.tfvars
-          echo "key = \"${{ secrets.TF_BACKEND_KEY }}\"" >> backend-config.tfvars
-          echo "region = \"${{ secrets.AWS_REGION }}\"" >> backend-config.tfvars
-          echo "use_lockfile = \"${{ secrets.TF_BACKEND_LOCK_FILE }}\"" >> backend-config.tfvars
-          echo "encrypt = true" >> backend-config.tfvars
-        working-directory: ./terraform
+        # Complex Variable (Ingress Rules) - Defined as JSON
+        # Using '|| null' handles cases where numeric secrets might be missing/empty
+        # Ensuring cidr_blocks is correctly formatted as a JSON list of strings
+        INGRESS_RULES_INPUT_JSON: |
+          [
+            { "from_port": ${{ secrets.INGRESS_FROM_PORT_1 || 'null' }}, "to_port": ${{ secrets.TO_PORT_1 || 'null' }}, "protocol": "${{ secrets.INGRESS_PROTOCOL_1 }}", "cidr_blocks": ["${{ secrets.INGRESS_CIDR_BLOCK_1 }}"] },
+            { "from_port": ${{ secrets.INGRESS_FROM_PORT_2 || 'null' }}, "to_port": ${{ secrets.TO_PORT_2 || 'null' }}, "protocol": "${{ secrets.INGRESS_PROTOCOL_2 }}", "cidr_blocks": ["${{ secrets.INGRESS_CIDR_BLOCK_2 }}"] },
+            { "from_port": ${{ secrets.INGRESS_FROM_PORT_3 || 'null' }}, "to_port": ${{ secrets.TO_PORT_3 || 'null' }}, "protocol": "${{ secrets.INGRESS_PROTOCOL_3 }}", "cidr_blocks": ["${{ secrets.INGRESS_CIDR_BLOCK_3 }}"] },
+            { "from_port": ${{ secrets.INGRESS_FROM_PORT_4 || 'null' }}, "to_port": ${{ secrets.TO_PORT_4 || 'null' }}, "protocol": "${{ secrets.INGRESS_PROTOCOL_4 }}", "cidr_blocks": ["${{ secrets.INGRESS_CIDR_BLOCK_4 }}"] }
+          ]
+      run: |
+        # --- Create terraform.tfvars for simple key-value pairs ---
+        echo "# Auto-generated by GitHub Actions - Simple Variables" > terraform.tfvars
+        echo "bucketname        = \"$BUCKETNAME\"" >> terraform.tfvars
+        echo "ami_id            = \"$AMI_ID\"" >> terraform.tfvars
+        echo "instance_type     = \"$INSTANCE_TYPE\"" >> terraform.tfvars
+        echo "key_name          = \"$KEY_NAME\"" >> terraform.tfvars
+        echo "public_key_path   = \"$PUBLIC_KEY_PATH\"" >> terraform.tfvars
+        # echo "filelocation_prtkey = \"$FILELOCATION_PRTKEY\"" >> terraform.tfvars # Avoid passing private key paths if possible
+        echo "vpc_cidr_block    = \"$VPC_CIDR_BLOCK\"" >> terraform.tfvars
+        echo "subnet_cidr_block = \"$SUBNET_CIDR_BLOCK\"" >> terraform.tfvars
+        echo "availability_zone = \"$AVAILABILITY_ZONE\"" >> terraform.tfvars
+        echo "destination       = \"$DESTINATION\"" >> terraform.tfvars
+        echo "ebs_volume_size   = \"$EBS_VOLUME_SIZE\"" >> terraform.tfvars # Ensure TF variable is number type if needed
+        echo "ebs_volume_type   = \"$EBS_VOLUME_TYPE\"" >> terraform.tfvars
+        # echo "generated_public_key = \"$GENERATED_PUB_KEY\"" >> terraform.tfvars # Uncomment if needed
 
+        echo "Generated terraform.tfvars:"
+        cat terraform.tfvars
 
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v1
-        with:
-          terraform_version: 1.10.5
+        # --- Create ingress_rules.tfvars.json for the complex list ---
+        # Filter out rules where from_port is null (indicating missing primary secret)
+        # This ensures we only pass valid rule objects to Terraform
+        echo "$INGRESS_RULES_INPUT_JSON" | jq '[.[] | select(.from_port != null and .from_port != "")] | .' > ingress_rules.tfvars.json
 
-      - name: Terraform Init 
-        run: terraform init -backend-config=backend-config.tfvars
-        working-directory: ./terraform
+        echo "Generated ingress_rules.tfvars.json:"
+        cat ingress_rules.tfvars.json
 
-      - name: Terraform Destroy
-        run: terraform destroy -auto-approve
-        working-directory: ./terraform
+        # --- Validation (Optional): Check if JSON is valid ---
+        if ! jq empty ingress_rules.tfvars.json; then
+          echo "ERROR: Generated ingress_rules.tfvars.json is not valid JSON."
+          exit 1
+        fi
+      working-directory: ./terraform # Generate files inside the terraform directory
 
-      - name: Clean up Terraform Files
-        run: |
-          rm -rf .terraform* terraform.tfstate* .tfvars
-        working-directory: ./terraform
+    # --- Generate Backend Configuration ---
+    - name: Generate backend-config.tfvars dynamically
+      run: |
+        echo "# Auto-generated by GitHub Actions - Backend Config" > backend-config.tfvars
+        echo "bucket         = \"${{ secrets.TF_BACKEND_BUCKET }}\"" >> backend-config.tfvars
+        echo "key            = \"${{ secrets.TF_BACKEND_KEY }}\"" >> backend-config.tfvars
+        echo "region         = \"${{ env.AWS_REGION }}\"" >> backend-config.tfvars # Use region from job env
+        # Use boolean directly if possible, otherwise ensure TF reads "true" correctly
+        echo "encrypt        = true" >> backend-config.tfvars
+        # Example for lock table if using DynamoDB
+        # echo "dynamodb_table = \"${{ secrets.TF_BACKEND_LOCK_TABLE }}\"" >> backend-config.tfvars
+        echo "use_lockfile = \"${{secrets.USELOCKFILE}}\"" >> backend-config.tfvars
+
+        echo "Generated backend-config.tfvars"
+        cat backend-config.tfvars
+      working-directory: ./terraform
+
+    - name: Set up Terraform
+      uses: hashicorp/setup-terraform@v1
+      with:
+        terraform_version: 1.10.5
+
+    - name: Terraform Init 
+      run: terraform init -backend-config=backend-config.tfvars
+      working-directory: ./terraform
+
+    - name: Terraform Destroy
+      run: terraform destroy -auto-approve
+      working-directory: ./terraform
+
+    - name: Clean up Terraform Files
+      run: |
+        rm -rf .terraform* terraform.tfstate* .tfvars
+      working-directory: ./terraform
 
         

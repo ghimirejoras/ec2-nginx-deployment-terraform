@@ -122,6 +122,7 @@
               echo "encrypt        = true" >> backend-config.tfvars
               # Example for lock table if using DynamoDB
               # echo "dynamodb_table = \"${{ secrets.TF_BACKEND_LOCK_TABLE }}\"" >> backend-config.tfvars
+              echo "use_lockfile = \"${{secrets.USELOCKFILE}}\"" >> backend-config.tfvars
     
               echo "Generated backend-config.tfvars"
               cat backend-config.tfvars
