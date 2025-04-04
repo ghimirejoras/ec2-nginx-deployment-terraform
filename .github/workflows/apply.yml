@@ -118,15 +118,13 @@ jobs:
                 working-directory: ./terraform
 
 
-            
-            -   name: Terraform Validate
-                run: terraform validate
-                working-directory: ./terraform
-
             -   name: Terraform Init
                 run: terraform init -backend-config=backend-config.tfvars
                 working-directory: ./terraform
 
+            -   name: Terraform Validate
+                run: terraform validate
+                working-directory: ./terraform                
             -   name: Terraform Plan
                 run: terraform plan -out=tfplan
                 working-directory: ./terraform
