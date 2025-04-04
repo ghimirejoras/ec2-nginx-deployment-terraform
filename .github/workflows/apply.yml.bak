@@ -1,0 +1,139 @@
+# .github/workflows/terraform.yml
+---
+
+name: apply
+
+on:
+    push:
+        branches: 
+            - dev
+
+jobs:
+    terraform:
+        runs-on: ubuntu-latest
+        environment: dev
+        env:
+
+            AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+            AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            AWS_REGION: ${{ secrets.AWS_REGION }}
+
+
+        steps:
+            -   name: Checkout Code
+                uses: actions/checkout@v4
+
+            -   name: Clean Terraform Cache
+                run: rm -rf .terraform .terraform.lock.hcl
+                working-directory: ./terraform
+
+            -   name: Generate SSH Key pair
+                run: |
+                    ssh-keygen -t ed25519 -C "hagulumba@gmail.com" -f ~/.ssh/id_rsa -q -N ""
+                    chmod 600 ~/.ssh/id_rsa
+
+            -   name: Generate tfvars dynamic
+                env:
+                 ALL_INGRESS_RULES: |
+                    [
+                    {
+                        "from_port": "${{ secrets.INGRESS_FROM_PORT_1 }}",
+                        "to_port": "${{ secrets.INGRESS_TO_PORT_1 }}",
+                        "protocol": "${{ secrets.INGRESS_PROTOCOL_1 }}",
+                        "cidr_blocks": "${{ secrets.INGRESS_CIDR_BLOCK_1 }}"
+                    },
+                    {
+                        "from_port": "${{ secrets.INGRESS_FROM_PORT_2 }}",
+                        "to_port": "${{ secrets.INGRESS_TO_PORT_2 }}",
+                        "protocol": "${{ secrets.INGRESS_PROTOCOL_2 }}",
+                        "cidr_blocks": "${{ secrets.INGRESS_CIDR_BLOCK_2 }}"
+                    },
+                    {
+                        "from_port": "${{ secrets.INGRESS_FROM_PORT_3 }}",
+                        "to_port": "${{ secrets.INGRESS_TO_PORT_3 }}",
+                        "protocol": "${{ secrets.INGRESS_PROTOCOL_3 }}",
+                        "cidr_blocks": "${{ secrets.INGRESS_CIDR_BLOCK_3 }}"
+                    },
+                    {
+                        "from_port": "${{ secrets.INGRESS_FROM_PORT_4 }}",
+                        "to_port": "${{ secrets.INGRESS_TO_PORT_4 }}",
+                        "protocol": "${{ secrets.INGRESS_PROTOCOL_4 }}",
+                        "cidr_blocks": "${{ secrets.INGRESS_CIDR_BLOCK_4 }}"
+                    }
+                    ]
+                run: |  
+                    echo "bucketname = \"${{ secrets.BUCKETNAME }}\"" >> terraform.tfvars
+                    echo "ami_id = \"${{ secrets.AMI_ID }}\"" >> terraform.tfvars
+                    echo "instance_type = \"${{ secrets.INSTANCE_TYPE }}\"" >> terraform.tfvars
+                    echo "key_name = \"${{ secrets.KEY_NAME }}\"" >> terraform.tfvars
+                    echo "public_key_path = \"${{ secrets.PUBLIC_KEY_PATH }}\"" >> terraform.tfvars
+                    echo "filelocation_prtkey = \"${{ secrets.FILELOCATION_PRTKEY }}\"" >> terraform.tfvars
+                    echo "vpc_cidr_block = \"${{ secrets.VPC_CIDR_BLOCK }}\"" >> terraform.tfvars
+                    echo "subnet_cidr_block = \"${{ secrets.SUBNET_CIDR_BLOCK }}\"" >> terraform.tfvars
+                    echo "availability_zone = \"${{ secrets.AVAILABILITY_ZONE }}\"" >> terraform.tfvars
+                    echo "destination = \"${{ secrets.DESTINATION }}\"" >> terraform.tfvars
+                    echo "ebs_volume_size = \"${{ secrets.EBS_VOLUME_SIZE }}\"" >> terraform.tfvars
+                    echo "ebs_volume_type = \"${{ secrets.EBS_VOLUME_TYPE }}\"" >> terraform.tfvars
+                        
+                    echo "ingress_rules = [" > terraform.tfvars
+                    echo "$ALL_INGRESS_RULES" | jq -c '.[]' | while read rule; do
+                        # Extract values from JSON
+                        from_port=$(echo $rule | jq -r '.from_port')
+                        to_port=$(echo $rule | jq -r '.to_port')
+                        protocol=$(echo $rule | jq -r '.protocol')
+                        cidr_blocks=$(echo $rule | jq -r '.cidr_blocks')
+                
+                        # Skip empty rules
+                        if [[ -n "$from_port" && "$from_port" != "null" ]]; then
+                        echo "  { from_port = $from_port, to_port = $to_port, protocol = \"$protocol\", cidr_blocks = [\"$cidr_blocks\"] }," >> terraform.tfvars
+                        fi
+                    done
+                
+                    # Remove last comma and close array
+                    sed -i '$ s/,$//' terraform.tfvars
+                    echo "]" >> terraform.tfvars
+                working-directory: ./terraform
+
+
+            -   name: Generate backend-config.tfvars dynamically
+                run: |
+                    echo "bucket = \"${{ secrets.TF_BACKEND_BUCKET }}\"" > backend-config.tfvars
+                    echo "key = \"${{ secrets.TF_BACKEND_KEY }}\"" >> backend-config.tfvars
+                    echo "region = \"${{ secrets.AWS_REGION }}\"" >> backend-config.tfvars
+                    echo "use_lockfile = \"${{ secrets.TF_BACKEND_LOCK_FILE }}\"" >> backend-config.tfvars
+                    echo "encrypt = true" >> backend-config.tfvars
+                working-directory: ./terraform
+
+            -   name: Set up Terraform
+                uses: hashicorp/setup-terraform@v3
+                with:
+                    terraform_version: 1.10.5
+
+            -   name: Debug
+                run: ls -R
+                working-directory: ./terraform
+
+            -   name: Terraform Fmt
+                run: terraform fmt -check
+                working-directory: ./terraform
+
+
+            -   name: Terraform Init
+                run: terraform init -backend-config=backend-config.tfvars
+                working-directory: ./terraform
+
+            -   name: Terraform Validate
+                run: terraform validate
+                working-directory: ./terraform                
+            -   name: Terraform Plan
+                run: terraform plan -out=tfplan
+                working-directory: ./terraform
+
+            -   name: Terraform Apply
+                run: terraform apply -auto-approve tfplan
+                working-directory: ./terraform
+            
+            
+            
+
+            
