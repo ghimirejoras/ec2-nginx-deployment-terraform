@@ -1,22 +1,29 @@
 # main.tf 
 
 
-data "aws_key_pair" "old_key_pair" {
-  key_name = try(var.key_name, null)
+data "external" "check_key" {
+  program = ["bash", "${path.module}/../scripts/check_key.sh"]
+  query = {
+    key_name = var.key_name
+  }
 }
 
 
 
 resource "aws_key_pair" "new_key_pair" {
-  count      = try(data.aws_key_pair.old_key_pair.key_name, null) != null ? 0 : 1
+  count      = data.external.check_key.result["exists"] == "true" ? 0 : 1
   key_name   = var.key_name
   public_key = file(var.public_key_path)
+}
+
+locals {
+  final_key_name = data.external.check_key.result["exists"] == "true" ? var.key_name : aws_key_pair.new_key_pair[0].key_name
 }
 
 resource "aws_instance" "nginx_instance" {
   ami                         = var.ami_id
   instance_type               = var.instance_type
-  key_name                    = try(data.aws_key_pair.old_key_pair.id, null) != null ? data.aws_key_pair.old_key_pair.key_name : aws_key_pair.new_key_pair[0].key_name
+  key_name                    = local.final_key_name
   subnet_id                   = aws_subnet.public_subnet.id
   vpc_security_group_ids      = [aws_security_group.web_sg.id]
   associate_public_ip_address = true
