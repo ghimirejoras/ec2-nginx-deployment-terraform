@@ -63,6 +63,9 @@ jobs:
           encrypt       = true
           use_lockfile  = "${{ secrets.USE_LOCKFILE }}"
           EOF
+
+          cat terraform.tfvars
+          
         working-directory: ./terraform
 
       - name: Setup Terraform
@@ -95,4 +98,4 @@ jobs:
         working-directory: ./terraform
 
 
-        
+        ###
