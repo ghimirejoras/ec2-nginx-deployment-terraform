@@ -1,4 +1,4 @@
-name: Destroy
+name: Terraform Destroy
 
 on:
   workflow_dispatch:
@@ -11,54 +11,50 @@ jobs:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_REGION: ${{ secrets.AWS_REGION }}
-      TF_VAR_destination: ${{ secrets.DESTINATION }}
-      TF_VAR_filelocation_prtkey: ${{ secrets.FILELOCATION_PRTKEY }}
-      TF_VAR_public_key_path: ${{ secrets.PUBLIC_KEY_PATH }}
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Install jq
         run: sudo apt-get update && sudo apt-get install -y jq
 
       - name: Generate Terraform Variable Files
         run: |
-          cat > terraform.tfvars <<EOF
+          cat <<EOF > terraform.tfvars
+          aws_region        = "${{ secrets.AWS_REGION }}"
           bucketname        = "${{ secrets.BUCKETNAME }}"
           ami_id            = "${{ secrets.AMI_ID }}"
           instance_type     = "${{ secrets.INSTANCE_TYPE }}"
           key_name          = "${{ secrets.KEY_NAME }}"
           public_key_path   = "${{ secrets.PUBLIC_KEY_PATH }}"
+          filelocation_prtkey = "${{ secrets.FILELOCATION_PRTKEY }}"
           vpc_cidr_block    = "${{ secrets.VPC_CIDR_BLOCK }}"
           subnet_cidr_block = "${{ secrets.SUBNET_CIDR_BLOCK }}"
           availability_zone = "${{ secrets.AVAILABILITY_ZONE }}"
           destination       = "${{ secrets.DESTINATION }}"
-          ebs_volume_size   = "${{ secrets.EBS_VOLUME_SIZE }}"
+          ebs_volume_size   = ${{ secrets.EBS_VOLUME_SIZE }}
           ebs_volume_type   = "${{ secrets.EBS_VOLUME_TYPE }}"
+
+          ingress_rules = [
+            { from_port = ${{ secrets.INGRESS_FROM_PORT_1 || -1 }}, to_port = ${{ secrets.TO_PORT_1 || -1 }}, protocol = "${{ secrets.INGRESS_PROTOCOL_1 }}", cidr_blocks = ["${{ secrets.INGRESS_CIDR_BLOCK_1 }}"] },
+            { from_port = ${{ secrets.INGRESS_FROM_PORT_2 || -1 }}, to_port = ${{ secrets.TO_PORT_2 || -1 }}, protocol = "${{ secrets.INGRESS_PROTOCOL_2 }}", cidr_blocks = ["${{ secrets.INGRESS_CIDR_BLOCK_2 }}"] },
+            { from_port = ${{ secrets.INGRESS_FROM_PORT_3 || -1 }}, to_port = ${{ secrets.TO_PORT_3 || -1 }}, protocol = "${{ secrets.INGRESS_PROTOCOL_3 }}", cidr_blocks = ["${{ secrets.INGRESS_CIDR_BLOCK_3 }}"] },
+            { from_port = ${{ secrets.INGRESS_FROM_PORT_4 || -1 }}, to_port = ${{ secrets.TO_PORT_4 || -1 }}, protocol = "${{ secrets.INGRESS_PROTOCOL_4 }}", cidr_blocks = ["${{ secrets.INGRESS_CIDR_BLOCK_4 }}"] }
+          ]
           EOF
 
-          echo '[
-            { "from_port": ${{ secrets.INGRESS_FROM_PORT_1 || 0 }}, "to_port": ${{ secrets.TO_PORT_1 || 0 }}, "protocol": "${{ secrets.INGRESS_PROTOCOL_1 }}", "cidr_blocks": ["${{ secrets.INGRESS_CIDR_BLOCK_1 }}"] },
-            { "from_port": ${{ secrets.INGRESS_FROM_PORT_2 || 0 }}, "to_port": ${{ secrets.TO_PORT_2 || 0 }}, "protocol": "${{ secrets.INGRESS_PROTOCOL_2 }}", "cidr_blocks": ["${{ secrets.INGRESS_CIDR_BLOCK_2 }}"] },
-            { "from_port": ${{ secrets.INGRESS_FROM_PORT_3 || 0 }}, "to_port": ${{ secrets.TO_PORT_3 || 0 }}, "protocol": "${{ secrets.INGRESS_PROTOCOL_3 }}", "cidr_blocks": ["${{ secrets.INGRESS_CIDR_BLOCK_3 }}"] },
-            { "from_port": ${{ secrets.INGRESS_FROM_PORT_4 || 0 }}, "to_port": ${{ secrets.TO_PORT_4 || 0 }}, "protocol": "${{ secrets.INGRESS_PROTOCOL_4 }}", "cidr_blocks": ["${{ secrets.INGRESS_CIDR_BLOCK_4 }}"] }
-          ]' | jq '[.[] | select(.from_port != 0)]' > ingress_rules.tfvars.json
-        working-directory: ./terraform
-
-      - name: Generate Backend Config
-        run: |
-          cat > backend-config.tfvars <<EOF
-          bucket         = "${{ secrets.TF_BACKEND_BUCKET }}"
-          key            = "${{ secrets.TF_BACKEND_KEY }}"
-          region         = "${{ secrets.AWS_REGION }}"
-          encrypt        = true
-          use_lockfile   = "${{ secrets.USE_LOCKFILE }}"
+          cat <<EOF > backend-config.tfvars
+          bucket       = "${{ secrets.TF_BACKEND_BUCKET }}"
+          key          = "${{ secrets.TF_BACKEND_KEY }}"
+          region       = "${{ secrets.AWS_REGION }}"
+          encrypt      = true
+          use_lockfile = "${{ secrets.USE_LOCKFILE }}"
           EOF
         working-directory: ./terraform
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v1
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.10.5
 
@@ -67,7 +63,7 @@ jobs:
         working-directory: ./terraform
 
       - name: Terraform Destroy
-        run: terraform destroy -auto-approve -var-file=terraform.tfvars -var-file=ingress_rules.tfvars.json
+        run: terraform destroy -auto-approve -var-file=terraform.tfvars
         working-directory: ./terraform
 
       - name: Cleanup Terraform Files

@@ -25,42 +25,46 @@ jobs:
 
       - name: Generate Variable Files
         run: |
-          cd terraform
+          
 
           # Generate terraform.tfvars
           cat <<EOF > terraform.tfvars
-          bucketname        = "${{ secrets.BUCKETNAME }}"
-          ami_id            = "${{ secrets.AMI_ID }}"
-          instance_type     = "${{ secrets.INSTANCE_TYPE }}"
-          key_name          = "${{ secrets.KEY_NAME }}"
-          public_key_path   = "${{ secrets.PUBLIC_KEY_PATH }}"
-          vpc_cidr_block    = "${{ secrets.VPC_CIDR_BLOCK }}"
+          aws_region = "${{ secrets.AWS_REGION }}"
+          bucketname = "${{ secrets.BUCKETNAME }}"
+          ami_id = "${{ secrets.AMI_ID }}"
+          instance_type = "${{ secrets.INSTANCE_TYPE }}"
+          key_name = "${{ secrets.KEY_NAME }}"
+          public_key_path = "${{ secrets.PUBLIC_KEY_PATH }}"
+          filelocation_prtkey = "${{ secrets.FILELOCATION_PRTKEY }}"
+          vpc_cidr_block = "${{ secrets.VPC_CIDR_BLOCK }}"
           subnet_cidr_block = "${{ secrets.SUBNET_CIDR_BLOCK }}"
           availability_zone = "${{ secrets.AVAILABILITY_ZONE }}"
-          destination       = "${{ secrets.DESTINATION }}"
-          ebs_volume_size   = ${{
-            secrets.EBS_VOLUME_SIZE }}
-          ebs_volume_type   = "${{ secrets.EBS_VOLUME_TYPE }}"
-          EOF
+          destination = "${{ secrets.DESTINATION }}"
 
-          # Generate ingress_rules.tfvars.json
-          cat <<EOF | jq '[.[] | select(.from_port != null and .from_port != "")]' > ingress_rules.tfvars.json
-          [
-            { "from_port": ${{ secrets.INGRESS_FROM_PORT_1 || 'null' }}, "to_port": ${{ secrets.TO_PORT_1 || 'null' }}, "protocol": "${{ secrets.INGRESS_PROTOCOL_1 }}", "cidr_blocks": ["${{ secrets.INGRESS_CIDR_BLOCK_1 }}"] },
-            { "from_port": ${{ secrets.INGRESS_FROM_PORT_2 || 'null' }}, "to_port": ${{ secrets.TO_PORT_2 || 'null' }}, "protocol": "${{ secrets.INGRESS_PROTOCOL_2 }}", "cidr_blocks": ["${{ secrets.INGRESS_CIDR_BLOCK_2 }}"] },
-            { "from_port": ${{ secrets.INGRESS_FROM_PORT_3 || 'null' }}, "to_port": ${{ secrets.TO_PORT_3 || 'null' }}, "protocol": "${{ secrets.INGRESS_PROTOCOL_3 }}", "cidr_blocks": ["${{ secrets.INGRESS_CIDR_BLOCK_3 }}"] },
-            { "from_port": ${{ secrets.INGRESS_FROM_PORT_4 || 'null' }}, "to_port": ${{ secrets.TO_PORT_4 || 'null' }}, "protocol": "${{ secrets.INGRESS_PROTOCOL_4 }}", "cidr_blocks": ["${{ secrets.INGRESS_CIDR_BLOCK_4 }}"] }
+          ebs_volume_size = ${{ secrets.EBS_VOLUME_SIZE }}
+          ebs_volume_type = "${{ secrets.EBS_VOLUME_TYPE }}"
+
+          ingress_rules = [
+            { from_port = ${{ secrets.INGRESS_FROM_PORT_1 || -1 }}, to_port = ${{ secrets.TO_PORT_1 || -1 }}, protocol = "${{ secrets.INGRESS_PROTOCOL_1 }}", cidr_blocks = ["${{ secrets.INGRESS_CIDR_BLOCK_1 }}"] },
+            { from_port = ${{ secrets.INGRESS_FROM_PORT_2 || -1 }}, to_port = ${{ secrets.TO_PORT_2 || -1 }}, protocol = "${{ secrets.INGRESS_PROTOCOL_2 }}", cidr_blocks = ["${{ secrets.INGRESS_CIDR_BLOCK_2 }}"] },
+            { from_port = ${{ secrets.INGRESS_FROM_PORT_3 || -1 }}, to_port = ${{ secrets.TO_PORT_3 || -1 }}, protocol = "${{ secrets.INGRESS_PROTOCOL_3 }}", cidr_blocks = ["${{ secrets.INGRESS_CIDR_BLOCK_3 }}"] },
+            { from_port = ${{ secrets.INGRESS_FROM_PORT_4 || -1 }}, to_port = ${{ secrets.TO_PORT_4 || -1 }}, protocol = "${{ secrets.INGRESS_PROTOCOL_4 }}", cidr_blocks = ["${{ secrets.INGRESS_CIDR_BLOCK_4 }}"] }
           ]
           EOF
 
-          # Generate backend config
+          # No need to generate ingress_rules.tfvars.json anymore
+          # Remove the backend-config.tfvars generation if you intend to manage backend config differently
+
+          # Generate backend config (keeping this as it seems necessary)
           cat <<EOF > backend-config.tfvars
-          bucket         = "${{ secrets.TF_BACKEND_BUCKET }}"
-          key            = "${{ secrets.TF_BACKEND_KEY }}"
-          region         = "${{ secrets.AWS_REGION }}"
-          encrypt        = true
-          use_lockfile   = "${{ secrets.USE_LOCKFILE }}"
+          bucket        = "${{ secrets.TF_BACKEND_BUCKET }}"
+          key           = "${{ secrets.TF_BACKEND_KEY }}"
+          region        = "${{ secrets.AWS_REGION }}"
+          encrypt       = true
+          use_lockfile  = "${{ secrets.USE_LOCKFILE }}"
           EOF
+        working-directory: ./terraform
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
