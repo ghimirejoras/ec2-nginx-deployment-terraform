@@ -16,8 +16,10 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Install jq
-        run: sudo apt-get update && sudo apt-get install -y jq
+      - name: Generate SSH Key pair
+        run: |
+            ssh-keygen -t ed25519 -C "hagulumba@gmail.com" -f ~/.ssh/id_rsa -q -N ""
+            chmod 600 ~/.ssh/id_rsa
 
       - name: Generate Terraform Variable Files
         run: |
