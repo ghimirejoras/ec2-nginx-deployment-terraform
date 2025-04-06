@@ -27,6 +27,21 @@ resource "aws_instance" "nginx_instance" {
     Name = "NginxServer"
   }
 
+  provisioner "file" {
+    source      = var.filelocation_prtkey
+    destination = var.destination
+
+
+    connection {
+
+      type        = "ssh"
+      host        = self.public_ip
+      user        = "ubuntu"
+      private_key = file(var.filelocation_prtkey)
+      timeout     = "15m"
+    }
+  }
+
   # Provisioner for Ansible
 
   provisioner "file" {
@@ -48,21 +63,6 @@ resource "aws_instance" "nginx_instance" {
   ansible playbook is executed in local machine
   */
 
-
-  provisioner "file" {
-    source      = var.filelocation_prtkey
-    destination = var.destination
-
-
-    connection {
-
-      type        = "ssh"
-      host        = self.public_ip
-      user        = "ubuntu"
-      private_key = file(var.filelocation_prtkey)
-      timeout     = "15m"
-    }
-  }
 
   provisioner "remote-exec" {
     inline = [
