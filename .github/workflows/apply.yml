@@ -47,8 +47,7 @@ jobs:
           ingress_rules = [
             { from_port = ${{ secrets.INGRESS_FROM_PORT_1 || -1 }}, to_port = ${{ secrets.TO_PORT_1 || -1 }}, protocol = "${{ secrets.INGRESS_PROTOCOL_1 }}", cidr_blocks = ["${{ secrets.INGRESS_CIDR_BLOCK_1 }}"] },
             { from_port = ${{ secrets.INGRESS_FROM_PORT_2 || -1 }}, to_port = ${{ secrets.TO_PORT_2 || -1 }}, protocol = "${{ secrets.INGRESS_PROTOCOL_2 }}", cidr_blocks = ["${{ secrets.INGRESS_CIDR_BLOCK_2 }}"] },
-            { from_port = ${{ secrets.INGRESS_FROM_PORT_3 || -1 }}, to_port = ${{ secrets.TO_PORT_3 || -1 }}, protocol = "${{ secrets.INGRESS_PROTOCOL_3 }}", cidr_blocks = ["${{ secrets.INGRESS_CIDR_BLOCK_3 }}"] },
-            { from_port = ${{ secrets.INGRESS_FROM_PORT_4 || -1 }}, to_port = ${{ secrets.TO_PORT_4 || -1 }}, protocol = "${{ secrets.INGRESS_PROTOCOL_4 }}", cidr_blocks = ["${{ secrets.INGRESS_CIDR_BLOCK_4 }}"] }
+            { from_port = ${{ secrets.INGRESS_FROM_PORT_3 || -1 }}, to_port = ${{ secrets.TO_PORT_3 || -1 }}, protocol = "${{ secrets.INGRESS_PROTOCOL_3 }}", cidr_blocks = ["${{ secrets.INGRESS_CIDR_BLOCK_3 }}"] }
           ]
           EOF
 
