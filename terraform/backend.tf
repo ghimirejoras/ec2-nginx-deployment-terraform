@@ -9,10 +9,10 @@ terraform {
   }
 
   backend "s3" {
-    bucket         = ""
-    key            = ""
-    region         = ""
-    encrypt        = ""
+    bucket  = ""
+    key     = ""
+    region  = ""
+    encrypt = ""
     // can use dynamodb_table but use_lockfile is new approach 
     // no managing of db all done in s3 itself so new is better
     use_lockfile = ""
